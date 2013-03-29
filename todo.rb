@@ -12,7 +12,6 @@ class CsvParser
     CSV.foreach(csv, :headers => true, :header_converters => :symbol) do |task|
       tasks << task.to_hash
     end
-    p tasks
   end
 
   def save!(updated_tasks)
@@ -44,11 +43,11 @@ class ArgvParse
     data[:command] = argv.shift
   end
 
-  def complete_item
+  def complete_task
     data[:complete_item] = argv.shift.to_i
   end
 
-  def add_item
+  def add_task
     data[:add_item] = argv.join(' ')
   end
 end
@@ -56,18 +55,15 @@ end
 class Output
   attr_reader :list
   def initialize(args)
-    @tasks = args[:list]
+    @list = args[:list]
   end
 
-  def self.task_complete(index)
-    tasks.each do |task|
-      if task.id == index
-        puts "#{task.todo} with an index of #{task.id} has been added to your TODO list!"
-      end
-    end
+  def task_complete(index)
+    task = list.tasks[index - 1]
+    puts "#{task.todo} with an index of #{task.id} has been completed, WOOT WOOT!"
   end
 
-  def self.task_added(todo)
+  def task_added(todo)
     id = (tasks.length + 1)
     puts "#{todo} with an index of #{id} has been added to your TODO list!"
   end
@@ -84,7 +80,7 @@ class Output
   end
 
   def intro
-    puts "Welcome to the Totally Outdated Do Operator TODO"
+    puts "Welcome to the Totally Outdated Do Operator TODO \nHere is what you can do \nADD todo \nCOMPLETE todo \nLIST"
   end
 
 end
@@ -130,33 +126,37 @@ class List
     data.each { |task| tasks << Task.new(task) }
   end 
 
-  def self.add(todo)
+  def add(todo)
     args = {}
     args[:tasks] = todo
     args[:id] = (tasks.length + 1)
     tasks << args
   end
 
-  def self.complete(index)
-    tasks.each do |task|
-      task[:complete] = "true" if task[:id] = index
-    end
+  def complete(index)
+    task = tasks[index - 1]
+    task.complete = "true"
   end
 end
 
 
 class Game
   def initialize
-  csv_data = CsvParser.new('todo3.csv')
+  csv_data = CsvParser.new('todo.csv')
 
   list = List.new({data: csv_data.tasks})
 
   input = ArgvParse.new(ARGV)
   output = Output.new({list: list})
 
-  command = input.command.upcase
-  p command
-  return output.intro if command.nil?
+   command = input.command
+
+  if command.nil?
+    return output.intro 
+  else
+    command = command.upcase
+  end
+
 
   case command
   when 'ADD' then input.add_task
